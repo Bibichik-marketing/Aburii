@@ -329,3 +329,14 @@ html,body{max-width:100%;overflow-x:clip}.site-nav,.editorial-section,.site-foot
 .lux-bloom{background:radial-gradient(ellipse at 50% 50%,rgba(153,47,22,.28),transparent 40%)}
 @media(max-width:900px){.lux-wagyu-whole,.lux-slices,.lux-cut-lines{width:min(92vw,820px);height:min(64vw,520px)}.lux-grill{bottom:-4vh;width:94vw;height:78vw}.lux-wagyu-whole img,.lux-slices{filter:drop-shadow(0 28px 34px rgba(0,0,0,.7)) saturate(.88) brightness(.76)}}
 @media(max-width:640px){.lux-wagyu-whole,.lux-slices,.lux-cut-lines{width:96vw;height:70vw}.lux-grill{width:100vw;height:90vw}}
+
+.visit-hero-img{transform:none;object-position:50% 45%}
+
+/* Keep the reveal hint in the viewport corner across screen sizes. */
+.lux-scroll-cue{right:max(clamp(20px,3vw,48px),env(safe-area-inset-right));bottom:calc(clamp(20px,3vh,36px) + env(safe-area-inset-bottom));display:flex;gap:10px;white-space:nowrap;pointer-events:none;font-size:clamp(9px,.75vw,11px);letter-spacing:.16em}
+.lux-scroll-cue::before{width:clamp(20px,3vw,40px)}
+.lux-scroll-cue>span{font-size:16px;line-height:1;letter-spacing:0}
+.lux-dev-controls{top:90px;bottom:auto;transform:translateX(-50%);transform-origin:top center}
+@media(max-width:900px){.lux-final-copy{bottom:calc(76px + env(safe-area-inset-bottom))}.lux-scroll-cue{right:max(20px,env(safe-area-inset-right));bottom:calc(20px + env(safe-area-inset-bottom));gap:8px}.lux-dev-controls{top:82px;bottom:auto}}
+@media(max-height:520px) and (orientation:landscape){.lux-scroll-cue{bottom:calc(14px + env(safe-area-inset-bottom))}.lux-dev-controls{top:76px}}
+@media(prefers-reduced-motion:reduce){.lux-scroll-cue{display:none}}

@@ -1,8 +1,9 @@
 export const siteImages = {
-  wagyuPlatter: "/images/wagyu-platter.webp",
-  wagyuGrill: "/images/wagyu-grill.webp",
-  diningRoom: "/images/dining-room.webp",
-  entrance: "/images/entrance.webp",
-  sakeService: "/images/sake-service.webp",
-  binchotanCraft: "/images/binchotan-craft.webp",
+  aboutFire: "/images/real/about-fire.webp",
+  wagyuPlatter: "/images/real/wagyu-platter.webp",
+  wagyuGrill: "/images/real/wagyu-grill.webp",
+  diningRoom: "/images/real/dining-room.webp",
+  entrance: "/images/real/entrance.webp",
+  sakeService: "/images/real/dining-experience.webp",
+  binchotanCraft: "/images/real/grill-craft.webp",
 } as const;

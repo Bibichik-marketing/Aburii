@@ -258,7 +258,7 @@ export function HomeHero({ locale }: { locale: Locale }) {
       <div className="lux-embers" aria-hidden="true">{Array.from({ length: 7 }, (_, index) => <i key={index} />)}</div>
       <div className="lux-edge-shade" aria-hidden="true" /><div className="lux-blackout" aria-hidden="true" />
       <div className="lux-final-copy"><h1>ABURII</h1><p>{t.home.heroKicker}</p><p>{t.home.heroSub}</p><div className="lux-actions"><Link className="solid-button" href={localizedPath(locale, "/menu")}>{t.home.viewMenu}</Link><a className="ghost-button" href={RESERVATION_URL} target="_blank" rel="noopener noreferrer">{t.nav.reserve}</a></div></div>
-      <span className="lux-scroll-cue">{t.home.scroll}</span>
+      <span className="lux-scroll-cue">Scroll to reveal <span aria-hidden="true">↓</span></span>
       {process.env.NODE_ENV !== "production" && <div className="lux-dev-controls" aria-label="Hero scene controls">
         {[['reveal', 'Reveal'], ['cut', 'Cut Wagyu'], ['grill', 'Grill Up'], ['drop', 'Drop Wagyu'], ['ignite', 'Ignite'], ['final', 'Final']].map(([action, label]) => <button type="button" key={action} onClick={() => controlHero(action)}>{label}</button>)}
         <i aria-hidden="true" />

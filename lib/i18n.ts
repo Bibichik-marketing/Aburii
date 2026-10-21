@@ -35,7 +35,7 @@ export const translations = {
         visit: { title: "Visit", copy: "Find us in the heart of TTDI." },
       },
       imageAlts: {
-        wagyuPlatter: "Premium raw Miyazaki A5 Wagyu platter",
+        wagyuPlatter: "Premium raw Miyazaki A5 Wagyu at ABURII",
         wagyuGrill: "A5 Wagyu approaching a charcoal grill",
         diningRoom: "The intimate ABURII yakiniku dining room",
       },
@@ -60,7 +60,7 @@ export const translations = {
       spaceBodyOne: "Our space is designed for long dinners, good company and moments that linger beyond the meal.",
       spaceBodyTwo: "Whether it is an intimate gathering or a larger celebration, Aburii offers a setting that feels both refined and welcoming.",
     },
-    reserve: { title: "Reserve your table", button: "Reserve a table", imageAlt: "Glowing binchotan charcoal" },
+    reserve: { title: "Reserve your table", button: "Reserve a table", imageAlt: "Yakiniku grilling over charcoal at ABURII" },
     menu: {
       open: "Open ABURII menu book",
       viewHint: "Click to view",
@@ -117,7 +117,7 @@ export const translations = {
         visit: { title: "到访", copy: "在 TTDI 找到我们。" },
       },
       imageAlts: {
-        wagyuPlatter: "精选宫崎 A5 和牛拼盘",
+        wagyuPlatter: "ABURII 精选宫崎 A5 和牛",
         wagyuGrill: "在炭火烤炉上烧制的 A5 和牛",
         diningRoom: "ABURII 日式烧肉餐厅空间",
       },
@@ -142,7 +142,7 @@ export const translations = {
       spaceBodyOne: "Aburii 的空间为悠长晚餐、好友相聚，以及餐后仍让人回味的时刻而设计。",
       spaceBodyTwo: "无论是亲密聚会或多人庆祝，这里都保留了精致却舒适的氛围。",
     },
-    reserve: { title: "预订您的座位", button: "立即订位", imageAlt: "炽热的备长炭" },
+    reserve: { title: "预订您的座位", button: "立即订位", imageAlt: "ABURII 炭火烧肉实拍" },
     menu: {
       open: "打开 ABURII 菜单",
       viewHint: "点击查看",
