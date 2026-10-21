@@ -340,3 +340,8 @@ html,body{max-width:100%;overflow-x:clip}.site-nav,.editorial-section,.site-foot
 @media(max-width:900px){.lux-final-copy{bottom:calc(76px + env(safe-area-inset-bottom))}.lux-scroll-cue{right:max(20px,env(safe-area-inset-right));bottom:calc(20px + env(safe-area-inset-bottom));gap:8px}.lux-dev-controls{top:82px;bottom:auto}}
 @media(max-height:520px) and (orientation:landscape){.lux-scroll-cue{bottom:calc(14px + env(safe-area-inset-bottom))}.lux-dev-controls{top:76px}}
 @media(prefers-reduced-motion:reduce){.lux-scroll-cue{display:none}}
+
+/* About opening photograph: keep the open kitchen and warm dining space in frame. */
+.about-hero-media img{object-position:60% 50%;filter:saturate(.94) contrast(1.04) brightness(.88);transform:none}
+@media(max-width:900px){.about-hero-media img{object-position:62% center}}
+@media(max-width:680px){.about-hero-media img{object-position:60% center}}

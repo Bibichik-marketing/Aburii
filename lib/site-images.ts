@@ -1,4 +1,5 @@
 export const siteImages = {
+  aboutAmbience: "/images/real/about-ambience.webp",
   aboutFire: "/images/real/about-fire.webp",
   wagyuPlatter: "/images/real/wagyu-platter.webp",
   wagyuGrill: "/images/real/wagyu-grill.webp",

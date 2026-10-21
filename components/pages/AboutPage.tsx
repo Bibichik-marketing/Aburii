@@ -17,7 +17,7 @@ export function AboutPage({ locale }: { locale: Locale }) {
 
       <section className="about-hero">
         <div className="about-hero-media">
-          <Image src={siteImages.aboutFire} alt="" fill priority sizes="100vw" />
+          <Image src={siteImages.aboutAmbience} alt="" fill priority sizes="100vw" />
         </div>
         <div className="about-hero-shade" />
         <div className="about-hero-copy">
