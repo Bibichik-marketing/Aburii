@@ -11,6 +11,18 @@ const menuPages = Array.from({ length: 16 }, (_, index) => ({
   pageNumber: index + 1,
 }));
 
+const decodedPages = new Map<string, Promise<void>>();
+function preparePage(index: number) {
+  const source = menuPages[index]?.image;
+  if (!source) return Promise.resolve();
+  if (!decodedPages.has(source)) {
+    const image = new window.Image();
+    image.src = source;
+    decodedPages.set(source, image.decode().catch(() => { decodedPages.delete(source); }));
+  }
+  return decodedPages.get(source)!;
+}
+
 type LayoutMode = "single" | "spread";
 type TurnDirection = "previous" | "next";
 type KillableTimeline = { kill: () => void };
@@ -36,6 +48,8 @@ export function MenuBook({ locale }: { locale: Locale }) {
   const turningLock = useRef(false);
   const layoutModeRef = useRef<LayoutMode>("spread");
   const activeTimeline = useRef<KillableTimeline | null>(null);
+  const turnOverlay = useRef<HTMLDivElement | null>(null);
+  const turnGeneration = useRef(0);
   const pointerStart = useRef<{ x: number; y: number; id: number } | null>(null);
 
   const isSinglePage = layoutMode === "single";
@@ -56,14 +70,18 @@ export function MenuBook({ locale }: { locale: Locale }) {
       element.style.removeProperty("opacity");
       element.style.removeProperty("visibility");
       element.style.removeProperty("filter");
+      element.style.removeProperty("will-change");
     }
   }, []);
 
   useEffect(() => {
-    const query = window.matchMedia("(max-width: 820px), (max-width: 1100px) and (orientation: portrait)");
+    const query = window.matchMedia("(max-width: 640px)");
     const updateLayout = () => {
       const nextMode: LayoutMode = query.matches ? "single" : "spread";
       if (layoutModeRef.current === nextMode) return;
+      turnGeneration.current += 1;
+      turnOverlay.current?.remove();
+      turnOverlay.current = null;
       activeTimeline.current?.kill();
       activeTimeline.current = null;
       clearAnimatedStyles();
@@ -83,6 +101,9 @@ export function MenuBook({ locale }: { locale: Locale }) {
     setCanFullscreen(Boolean(document.fullscreenEnabled && bookRef.current?.requestFullscreen));
     return () => {
       query.removeEventListener("change", updateLayout);
+      turnGeneration.current += 1;
+      turnOverlay.current?.remove();
+      turnOverlay.current = null;
       activeTimeline.current?.kill();
     };
   }, [clearAnimatedStyles]);
@@ -90,19 +111,20 @@ export function MenuBook({ locale }: { locale: Locale }) {
   useEffect(() => {
     const nearby = new Set<number>();
     const step = isSinglePage ? 1 : 2;
-    for (const index of [visiblePageIndex - step, visiblePageIndex, visiblePageIndex + 1, visiblePageIndex + step, visiblePageIndex + step + 1]) {
+    for (const index of [visiblePageIndex - step, visiblePageIndex - step + 1, visiblePageIndex, visiblePageIndex + 1, visiblePageIndex + step, visiblePageIndex + step + 1]) {
       if (index >= 0 && index < menuPages.length) nearby.add(index);
     }
     for (const index of nearby) {
-      const preload = new window.Image();
-      preload.src = menuPages[index].image;
+      void preparePage(index);
     }
   }, [isSinglePage, visiblePageIndex]);
 
   const releaseTurnLock = useCallback(() => {
+    turnOverlay.current?.remove();
+    turnOverlay.current = null;
     activeTimeline.current = null;
     turningLock.current = false;
-    for (const element of [leftPageRef.current, rightPageRef.current]) {
+    for (const element of [openBookRef.current, leftPageRef.current, rightPageRef.current]) {
       if (!element) continue;
       element.style.removeProperty("transform");
       element.style.removeProperty("opacity");
@@ -172,50 +194,75 @@ export function MenuBook({ locale }: { locale: Locale }) {
     setIsTurning(true);
     setTurnDirection(direction);
 
+    const generation = turnGeneration.current;
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const { gsap } = await import("gsap");
-    const page = isSinglePage ? rightPageRef.current : direction === "next" ? rightPageRef.current : leftPageRef.current;
-    if (!page) {
+    const [{ gsap }] = await Promise.all([
+      import("gsap"),
+      preparePage(target),
+      isSinglePage ? Promise.resolve() : preparePage(target + 1),
+    ]);
+    if (generation !== turnGeneration.current) return;
+    const frame = openBookRef.current;
+    if (!frame || reducedMotion) {
       setPageIndex(target);
       releaseTurnLock();
       return;
     }
 
-    const simplified = simpleMotion;
-    const outgoingAngle = direction === "next" ? -11 : 11;
-    const incomingAngle = -outgoingAngle;
-    const timeline = gsap.timeline({ defaults: { ease: "power2.inOut" }, onComplete: releaseTurnLock });
+    // Keep the decoded outgoing spread over the incoming pages: no mid-turn image swap.
+    const outgoing = frame.cloneNode(true) as HTMLDivElement;
+    outgoing.setAttribute("aria-hidden", "true");
+    outgoing.inert = true;
+    outgoing.style.pointerEvents = "none";
+    outgoing.style.zIndex = "5";
+    outgoing.style.willChange = "transform, opacity";
+    frame.after(outgoing);
+    turnOverlay.current = outgoing;
+    flushSync(() => setPageIndex(target));
+    const sign = direction === "next" ? -1 : 1;
+    const distance = isSinglePage ? 28 : 16;
+    frame.style.willChange = "transform, opacity";
+    // The snapshot preserves the current swipe offset, while the incoming page settles in.
+    gsap.set([leftPageRef.current, rightPageRef.current].filter(Boolean), { clearProps: "transform,opacity,filter,willChange" });
+    if (!isSinglePage && !simpleMotion) {
+      // A physical leaf turns around the spine; its reverse becomes the opposite page.
+      const turningSelector = direction === "next" ? ".book-page-right" : ".book-page-left";
+      const reverseSelector = direction === "next" ? ".book-page-left" : ".book-page-right";
+      const oldPage = outgoing.querySelector<HTMLDivElement>(turningSelector)!;
+      const staticPage = outgoing.querySelector<HTMLDivElement>(reverseSelector)!;
+      const destination = frame.querySelector<HTMLDivElement>(reverseSelector)!;
+      const leaf = document.createElement("div");
+      leaf.className = "book-turn-leaf";
+      Object.assign(leaf.style, {
+        left: `${oldPage.offsetLeft}px`, top: `${oldPage.offsetTop}px`,
+        width: `${oldPage.offsetWidth}px`, height: `${oldPage.offsetHeight}px`,
+        transformOrigin: direction === "next" ? "left center" : "right center",
+      });
+      const front = oldPage.cloneNode(true) as HTMLDivElement;
+      const back = destination.cloneNode(true) as HTMLDivElement;
+      front.className = "book-page book-turn-face book-turn-front";
+      back.className = "book-page book-turn-face book-turn-back";
+      leaf.append(front, back);
+      oldPage.style.visibility = "hidden";
+      outgoing.append(leaf);
+      const timeline = gsap.timeline({ onComplete: releaseTurnLock });
+      activeTimeline.current = timeline;
+      timeline
+        .to(leaf, { rotateY: sign * 180, duration: .78, ease: "power2.inOut", force3D: true }, 0)
+        .set(staticPage, { visibility: "hidden" }, .39);
+      return;
+    }
+    const timeline = gsap.timeline({
+      defaults: { ease: "power2.inOut" },
+      onComplete: releaseTurnLock,
+    });
     activeTimeline.current = timeline;
-
-    if (reducedMotion || simplified) {
-      timeline
-        .to(page, { opacity: 0.45, duration: 0.16 })
-        .call(() => flushSync(() => setPageIndex(target)))
-        .set(page, { opacity: 0.45 })
-        .to(page, { opacity: 1, duration: 0.18 });
-      return;
-    }
-
-    if (isSinglePage) {
-      const mobileOutgoingX = direction === "next" ? -32 : 32;
-      const mobileIncomingX = -mobileOutgoingX;
-      const mobileOutgoingAngle = direction === "next" ? -6 : 6;
-      const mobileIncomingAngle = -mobileOutgoingAngle;
-      page.style.willChange = "transform, opacity";
-      gsap.set(page, { x: 0, rotateY: 0, opacity: 1 });
-      timeline
-        .to(page, { x: mobileOutgoingX, rotateY: mobileOutgoingAngle, opacity: 0.58, duration: 0.22, transformOrigin: direction === "next" ? "left center" : "right center" })
-        .call(() => flushSync(() => setPageIndex(target)))
-        .set(page, { x: mobileIncomingX, rotateY: mobileIncomingAngle, opacity: 0.64 })
-        .to(page, { x: 0, rotateY: 0, opacity: 1, duration: 0.32, ease: "power3.out" });
-      return;
-    }
-
     timeline
-      .to(page, { rotateY: outgoingAngle, filter: "brightness(.66)", opacity: 0.3, duration: 0.3, transformOrigin: direction === "next" ? "left center" : "right center" })
-      .call(() => flushSync(() => setPageIndex(target)))
-      .set(page, { rotateY: incomingAngle, filter: "brightness(.72)", opacity: 0.35 })
-      .to(page, { rotateY: 0, filter: "brightness(1)", opacity: 1, duration: 0.34 });
+      .fromTo(frame, { x: -sign * distance, rotateY: simpleMotion ? 0 : -sign * 4, opacity: 0 },
+        { x: 0, rotateY: 0, opacity: 1, duration: .58, ease: "power3.out" }, 0)
+      .to(outgoing, { x: sign * distance, rotateY: simpleMotion ? 0 : sign * 14, opacity: 0,
+        transformOrigin: direction === "next" ? "left center" : "right center", duration: .5 }, 0);
+
   }, [isOpen, isSinglePage, lastVisibleIndex, releaseTurnLock, simpleMotion, visiblePageIndex]);
 
   useEffect(() => {
@@ -250,7 +297,7 @@ export function MenuBook({ locale }: { locale: Locale }) {
   }, [isSinglePage, isTurning]);
 
   const handlePointerDown = (event: React.PointerEvent) => {
-    if (!isOpen || !event.isPrimary || (event.target as HTMLElement).closest("button")) return;
+    if (!isOpen || turningLock.current || openingLock.current || !event.isPrimary || (event.target as HTMLElement).closest("button")) return;
     pointerStart.current = { x: event.clientX, y: event.clientY, id: event.pointerId };
     event.currentTarget.setPointerCapture(event.pointerId);
   };
@@ -259,6 +306,7 @@ export function MenuBook({ locale }: { locale: Locale }) {
     const start = pointerStart.current;
     if (!start || start.id !== event.pointerId || !isSinglePage || isTurning || !rightPageRef.current) return;
     const distance = event.clientX - start.x;
+    if (Math.abs(event.clientY - start.y) > Math.abs(distance) || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     const visualDistance = Math.max(-44, Math.min(44, distance * 0.24));
     rightPageRef.current.style.willChange = "transform, opacity";
     rightPageRef.current.style.transform = `translate3d(${visualDistance}px, 0, 0) rotateY(${visualDistance / 7}deg)`;
@@ -272,6 +320,10 @@ export function MenuBook({ locale }: { locale: Locale }) {
     const movementX = event.clientX - start.x;
     const movementY = event.clientY - start.y;
     if (Math.abs(movementX) < 60 || Math.abs(movementX) < Math.abs(movementY) * 1.25) {
+      void snapMobilePageBack();
+      return;
+    }
+    if ((movementX > 0 && visiblePageIndex === 0) || (movementX < 0 && visiblePageIndex === lastVisibleIndex)) {
       void snapMobilePageBack();
       return;
     }
@@ -312,14 +364,14 @@ export function MenuBook({ locale }: { locale: Locale }) {
           <span className="open-book-cover-underlay" aria-hidden="true" />
           {!isSinglePage && (
             <div ref={leftPageRef} className="book-page book-page-left">
-              <Image src={menuPages[visiblePageIndex].image} alt={t.menu.imageAlt(menuPages[visiblePageIndex].pageNumber)} fill sizes="(max-width: 1023px) 86vw, 42vw" priority={visiblePageIndex < 4} draggable={false} />
+              <Image unoptimized src={menuPages[visiblePageIndex].image} alt={t.menu.imageAlt(menuPages[visiblePageIndex].pageNumber)} fill sizes="(max-width: 1023px) 86vw, 42vw" priority={visiblePageIndex < 4} draggable={false} />
             </div>
           )}
           <div ref={rightPageRef} className="book-page book-page-right">
             {rightPageIndex === null ? (
               <span className="book-page-blank" aria-hidden="true" />
             ) : (
-              <Image src={menuPages[rightPageIndex].image} alt={t.menu.imageAlt(menuPages[rightPageIndex].pageNumber)} fill sizes={isSinglePage ? "(max-width: 1023px) 92vw, 560px" : "42vw"} priority={rightPageIndex < 4} draggable={false} />
+              <Image unoptimized src={menuPages[rightPageIndex].image} alt={t.menu.imageAlt(menuPages[rightPageIndex].pageNumber)} fill sizes={isSinglePage ? "(max-width: 1023px) 92vw, 560px" : "42vw"} priority={rightPageIndex < 4} draggable={false} />
             )}
           </div>
           <span className="book-gutter" aria-hidden="true" />

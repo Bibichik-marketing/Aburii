@@ -59,16 +59,22 @@ export function HomeHero({ locale }: { locale: Locale }) {
 
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    let disposed = false;
     let cleanup = () => {};
     (async () => {
       const { gsap } = await import("gsap");
       const { ScrollTrigger } = await import("gsap/ScrollTrigger");
+      const openingImage = new window.Image();
+      openingImage.src = heroAssets.wagyuWhole;
+      await openingImage.decode().catch(() => {});
+      if (disposed) return;
       gsap.registerPlugin(ScrollTrigger);
       let removeControl = () => {};
       const ctx = gsap.context(() => {
         const q = gsap.utils.selector(root);
         const slices = q<HTMLElement>(".lux-wagyu-slice");
         const stage = q<HTMLElement>(".lux-slices");
+        const intact = q<HTMLElement>(".lux-intact-wagyu");
         const cutLines = q<HTMLElement>(".lux-cut-lines");
         const grill = q<HTMLElement>(".lux-grill");
         const smoke = q<HTMLElement>(".lux-smoke");
@@ -77,13 +83,14 @@ export function HomeHero({ locale }: { locale: Locale }) {
         const mm = gsap.matchMedia();
 
         mm.add({
+          fallback: "all",
           largeDesktop: "(min-width: 1600px)",
           desktop: "(min-width: 1280px) and (max-width: 1599px)",
           laptop: "(min-width: 1024px) and (max-width: 1279px) and (orientation: landscape)",
           tabletLandscape: "(min-width: 641px) and (max-width: 1023px) and (orientation: landscape)",
           tabletPortrait: "(min-width: 641px) and (max-width: 900px) and (orientation: portrait)",
-          tabletPortraitWide: "(min-width: 901px) and (max-width: 1024px) and (orientation: portrait)",
-          mobileLandscape: "(max-width: 900px) and (max-height: 520px) and (orientation: landscape)",
+          tabletPortraitWide: "(min-width: 901px) and (max-width: 1279px) and (orientation: portrait)",
+          mobileLandscape: "(max-width: 640px) and (orientation: landscape), (max-width: 900px) and (max-height: 520px) and (orientation: landscape)",
           mobilePortrait: "(min-width: 375px) and (max-width: 640px) and (orientation: portrait)",
           smallMobile: "(max-width: 374px) and (orientation: portrait)",
         }, (mediaContext) => {
@@ -99,6 +106,8 @@ export function HomeHero({ locale }: { locale: Locale }) {
 
           gsap.set(root.current, { height: `${config.scrollVh}vh` });
           gsap.set([...stage, ...cutLines], { width: config.stageWidth, height: config.stageHeight, y: `${config.stageYOffsetVh ?? 0}vh` });
+          gsap.set(slices, { autoAlpha: 0, x: 0, y: 0, z: 0, rotationX: 0, rotationY: 0, rotationZ: 0, scaleX: 1, scaleY: 1 });
+          gsap.set(intact, { autoAlpha: 1 });
           gsap.set(grill, { width: config.grill.width, height: config.grill.height, bottom: `${config.grill.bottomVh}vh`, yPercent: config.grill.startYPercent });
           gsap.set(smoke, { width: `${config.smokeWidthVw}vw`, left: `${config.smokeLeftPercent}%` });
           gsap.set(q(".lux-reaction"), { left: `${config.reactionInsetPercent}%`, right: `${config.reactionInsetPercent}%` });
@@ -143,6 +152,8 @@ export function HomeHero({ locale }: { locale: Locale }) {
 
           timeline
             .addLabel("cut", 0)
+            .set(slices, { autoAlpha: 1 }, .3)
+            .set(intact, { autoAlpha: 0 }, .3)
             .fromTo(q(".cut-1"), { autoAlpha: 0, scaleY: 0, yPercent: -12 }, { autoAlpha: .82, scaleY: 1, yPercent: 0, duration: .42, ease: "power3.inOut" }, .04)
             .to(slices[0], { x: -cutNudge, duration: .42, ease: "power2.inOut" }, .3)
             .fromTo(q(".cut-2"), { autoAlpha: 0, scaleY: 0, yPercent: -12 }, { autoAlpha: .82, scaleY: 1, yPercent: 0, duration: .42, ease: "power3.inOut" }, .22)
@@ -187,13 +198,11 @@ export function HomeHero({ locale }: { locale: Locale }) {
           if (openingComplete) {
             gsap.set(q(".lux-blackout"), { autoAlpha: 0 });
             gsap.set(stage, { autoAlpha: 1, scale: config.revealScale });
-            gsap.set(slices, { autoAlpha: 1 });
             gsap.set(q(".lux-bloom"), { opacity: .52 });
             activateScrollTimeline();
           } else {
             gsap.set(q(".lux-blackout"), { autoAlpha: 1 });
             gsap.set(stage, { autoAlpha: 0, scale: .94 });
-            gsap.set(slices, { autoAlpha: 1 });
             gsap.set(q(".lux-bloom"), { opacity: 0 });
             openingTimeline = gsap.timeline({
               delay: .18,
@@ -239,7 +248,7 @@ export function HomeHero({ locale }: { locale: Locale }) {
 
       cleanup = () => { removeControl(); ctx.revert(); };
     })();
-    return () => cleanup();
+    return () => { disposed = true; cleanup(); };
   }, []);
 
   const controlHero = (action: string) => window.dispatchEvent(new CustomEvent("aburii:hero-control", { detail: { action } }));
@@ -249,6 +258,7 @@ export function HomeHero({ locale }: { locale: Locale }) {
     <div className="lux-hero-pin">
       <div className="lux-bloom" aria-hidden="true" />
       <div className="lux-slices lux-depth" role="img" aria-label={t.home.imageAlts.wagyuPlatter}>
+        <div className="lux-intact-wagyu" style={{ backgroundImage: `url(${heroAssets.wagyuWhole})` }} />
         {[0, 1, 2, 3].map((index) => <div className={`lux-wagyu-slice slice-${index + 1}`} style={{ backgroundImage: `url(${heroAssets.wagyuWhole})` }} key={index} />)}
       </div>
       <div className="lux-cut-lines" aria-hidden="true"><i className="lux-cut-line cut-1" /><i className="lux-cut-line cut-2" /><i className="lux-cut-line cut-3" /></div>

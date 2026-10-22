@@ -9,3 +9,4 @@ Original ABURII photographs supplied by the owner. WebP copies resized to a maxi
 - dining-experience.webp: INTERIOR AMBIENCE/DSC_8747.jpg
 - about-fire.webp: FOOD/DSC_8547.jpg
 - about-ambience.webp: INTERIOR AMBIENCE/DSC_8710.jpg
+- bar-ambience.webp: INTERIOR AMBIENCE/DSC_8604.jpg

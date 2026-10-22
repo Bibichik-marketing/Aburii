@@ -74,7 +74,7 @@ export const translations = {
     },
     visit: {
       eyebrow: "Visit",
-      title: "Find\nus at\nTTDI",
+      title: "Find us\nat TTDI",
       intro: "A neighbourhood destination for Japanese yakiniku, good food and great company.",
       location: "Location",
       hours: "Opening hours",

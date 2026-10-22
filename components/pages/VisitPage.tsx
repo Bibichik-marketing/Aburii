@@ -35,7 +35,7 @@ export function VisitPage({ locale }: { locale: Locale }) {
       <section className="visit-gallery" aria-label={t.visit.galleryLabel}>
         <div className="gallery-image gallery-one"><Image className="cover" src={siteImages.diningRoom} alt="" fill sizes="(max-width: 640px) 100vw, 33vw" /></div>
         <div className="gallery-image gallery-two"><Image className="cover" src={siteImages.entrance} alt="" fill sizes="(max-width: 640px) 100vw, 33vw" /></div>
-        <div className="gallery-image gallery-three"><Image className="cover" src={siteImages.sakeService} alt="" fill sizes="(max-width: 640px) 100vw, 33vw" /></div>
+        <div className="gallery-image gallery-three"><Image className="cover" src={siteImages.barAmbience} alt="" fill sizes="(max-width: 640px) 100vw, 33vw" /></div>
       </section>
       <SiteFooter locale={locale} />
     </main>
