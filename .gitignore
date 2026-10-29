@@ -40,3 +40,7 @@ next-env.d.ts
 /outputs/
 /work/
 /.npm-cache/
+
+# Local package-manager stores and TypeScript cache
+/.pnpm-store/
+*.tsbuildinfo
